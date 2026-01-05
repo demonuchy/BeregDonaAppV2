@@ -5,6 +5,8 @@ from fastapi.requests import Request
 from fastapi.responses import Response
 from contextlib import asynccontextmanager
 
+from db.engine import db_health_chek
+
 from shared.logger.logger import logger
 
 
@@ -17,22 +19,19 @@ async def lifespan(app : FastAPI):
 app = FastAPI(lifespan=lifespan, title="User serviice", version="1.0.0")
 
 
-@app.get("/api-test/test")
-async def test(request: Request):
-    logger.info("Request recive")
-    logger.info("Protected path worck")
-    return Response(status_code=200, content="ok get")
-
-@app.post("/api-test/test")
-async def test_post(request: Request):
-    logger.info("Request recive")
-    logger.info("Protected path worck")
-    return Response(status_code=200, content="ok post")
-
-@app.post("/health")
+@app.get("/health")
 async def check_haelth(request : Request):
-    logger.info(f"Health check user")
-    return Response(status_code=200, content="ok")
+    try:
+        logger.debug(f"Health check auth...")
+        logger.debug("Service health")
+        logger.debug("Check database...")
+        await db_health_chek()
+        logger.debug("database health")
+        return Response(status_code=200, content="ok")
+    except Exception as e:
+        return Response(status_code=500, content=str(e))
+
     
+
 if __name__ == "__main__":
     uvicorn.run("user.main:app", port=8002, host="0.0.0.0", reload=True)

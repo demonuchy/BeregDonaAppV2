@@ -5,6 +5,8 @@ from fastapi.requests import Request
 from fastapi.responses import Response
 from contextlib import asynccontextmanager
 
+from db.engine import db_health_chek
+
 from shared.logger.logger import logger
 
 
@@ -17,17 +19,18 @@ async def lifespan(app : FastAPI):
 
 app = FastAPI(lifespan=lifespan, title="Auth service", version="1.0.0")
 
-
-@app.post("/api/v1/test-auth")
-async def test_auth(request : Request):
-    logger.info("Authentication ....")
-    logger.info("Auth service pricessed request succes")
-    return Response(status_code=401, content="-")
-
-@app.post("/health")
+@app.get("/health")
 async def check_haelth(request : Request):
-    logger.info(f"Health check auth")
-    return Response(status_code=200, content="ok")
+    try:
+        logger.debug(f"Health check auth...")
+        logger.debug("Service health")
+        logger.debug("Check database...")
+        await db_health_chek()
+        logger.debug("database health")
+        return Response(status_code=200, content="ok")
+    except Exception as e:
+        return Response(status_code=500, content=str(e))
+    
     
 
     
